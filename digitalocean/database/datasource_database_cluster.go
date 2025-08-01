@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 
 	"github.com/digitalocean/godo"
@@ -161,6 +162,11 @@ func DataSourceDigitalOceanDatabaseCluster() *schema.Resource {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
+
+			"metrics_endpoint": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
 		},
 	}
 }
@@ -233,6 +239,12 @@ func dataSourceDigitalOceanDatabaseClusterRead(ctx context.Context, d *schema.Re
 			d.Set("urn", db.URN())
 			d.Set("private_network_uuid", db.PrivateNetworkUUID)
 			d.Set("project_id", db.ProjectID)
+
+			// Set metrics endpoint if available
+			if len(db.MetricsEndpoints) > 0 {
+				addr := db.MetricsEndpoints[0]
+				d.Set("metrics_endpoint", fmt.Sprintf("https://%s:%d/metrics", addr.Host, addr.Port))
+			}
 
 			break
 		}

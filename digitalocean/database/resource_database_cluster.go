@@ -263,6 +263,11 @@ func ResourceDigitalOceanDatabaseCluster() *schema.Resource {
 				Optional: true,
 				Computed: true,
 			},
+
+			"metrics_endpoint": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
 		},
 
 		Timeouts: &schema.ResourceTimeout{
@@ -570,6 +575,12 @@ func resourceDigitalOceanDatabaseClusterRead(ctx context.Context, d *schema.Reso
 	uiErr := setUIConnectionInfo(database, d)
 	if uiErr != nil {
 		return diag.Errorf("Error setting ui connection info for database cluster: %s", err)
+	}
+
+	// Set metrics endpoint if available
+	if len(database.MetricsEndpoints) > 0 {
+		addr := database.MetricsEndpoints[0]
+		d.Set("metrics_endpoint", fmt.Sprintf("https://%s:%d/metrics", addr.Host, addr.Port))
 	}
 
 	d.Set("urn", database.URN())
