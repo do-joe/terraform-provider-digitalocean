@@ -1,4 +1,4 @@
-output "multi_monitoring_endpoint" {
+output "monitoring_endpoints" {
   description = "The metrics endpoints for the database cluster"
   value       = digitalocean_database_cluster.test.metrics_endpoints
 }
