@@ -48,7 +48,7 @@ func TestAccDataSourceDigitalOceanDatabaseCluster_Basic(t *testing.T) {
 						"data.digitalocean_database_cluster.foobar", "project_id"),
 					resource.TestCheckResourceAttrSet(
 						"data.digitalocean_database_cluster.foobar", "storage_size_mib"),
-					// Check for metrics_endpoint (deprecated) and metrics_endpoints
+					// Check for metrics_endpoints
 					testAccCheckDataSourceDigitalOceanDatabaseClusterMetricsEndpoints("data.digitalocean_database_cluster.foobar"),
 					testAccCheckDigitalOceanDatabaseClusterURIPassword(
 						"digitalocean_database_cluster.foobar", "uri"),
@@ -98,12 +98,6 @@ func testAccCheckDataSourceDigitalOceanDatabaseClusterMetricsEndpoints(resourceN
 			return fmt.Errorf("Not found: %s", resourceName)
 		}
 
-		// Check that metrics_endpoint is set and is a valid URL
-		metricsEndpoint := rs.Primary.Attributes["metrics_endpoint"]
-		if metricsEndpoint == "" {
-			return fmt.Errorf("metrics_endpoint is empty")
-		}
-
 		// Check that metrics_endpoints is set and has at least one element
 		count, err := strconv.Atoi(rs.Primary.Attributes["metrics_endpoints.#"])
 		if err != nil {
@@ -113,10 +107,10 @@ func testAccCheckDataSourceDigitalOceanDatabaseClusterMetricsEndpoints(resourceN
 			return fmt.Errorf("metrics_endpoints is empty")
 		}
 
-		// Check that the first endpoint in metrics_endpoints matches metrics_endpoint
+		// Check that the first endpoint is a valid URL
 		firstEndpoint := rs.Primary.Attributes["metrics_endpoints.0"]
-		if firstEndpoint != metricsEndpoint {
-			return fmt.Errorf("First endpoint in metrics_endpoints (%s) does not match metrics_endpoint (%s)", firstEndpoint, metricsEndpoint)
+		if firstEndpoint == "" {
+			return fmt.Errorf("First endpoint in metrics_endpoints is empty")
 		}
 
 		return nil

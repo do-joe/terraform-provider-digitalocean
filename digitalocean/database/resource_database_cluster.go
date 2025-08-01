@@ -271,13 +271,6 @@ func ResourceDigitalOceanDatabaseCluster() *schema.Resource {
 					Type: schema.TypeString,
 				},
 			},
-
-			// Deprecated: Use metrics_endpoints instead
-			"metrics_endpoint": {
-				Type:       schema.TypeString,
-				Computed:   true,
-				Deprecated: "This attribute is deprecated. Use metrics_endpoints instead.",
-			},
 		},
 
 		Timeouts: &schema.ResourceTimeout{
@@ -708,16 +701,14 @@ func setDatabaseConnectionInfo(database *godo.Database, d *schema.ResourceData) 
 }
 
 func setUIConnectionInfo(database *godo.Database, d *schema.ResourceData) error {
-	if database.UIConnection == nil {
-		return fmt.Errorf("no UI connection available for database cluster")
+	if database.UIConnection != nil {
+		d.Set("ui_host", database.UIConnection.Host)
+		d.Set("ui_port", database.UIConnection.Port)
+		d.Set("ui_uri", database.UIConnection.URI)
+		d.Set("ui_database", database.UIConnection.Database)
+		d.Set("ui_user", database.UIConnection.User)
+		d.Set("ui_password", database.UIConnection.Password)
 	}
-
-	d.Set("ui_host", database.UIConnection.Host)
-	d.Set("ui_port", database.UIConnection.Port)
-	d.Set("ui_uri", database.UIConnection.URI)
-	d.Set("ui_database", database.UIConnection.Database)
-	d.Set("ui_user", database.UIConnection.User)
-	d.Set("ui_password", database.UIConnection.Password)
 
 	return nil
 }
@@ -726,10 +717,6 @@ func setMetricsEndpoints(database *godo.Database, d *schema.ResourceData) error 
 	if len(database.MetricsEndpoints) == 0 {
 		return fmt.Errorf("no metrics endpoints available for database cluster")
 	}
-
-	// For backward compatibility, set the first endpoint to metrics_endpoint
-	addr := database.MetricsEndpoints[0]
-	d.Set("metrics_endpoint", fmt.Sprintf("https://%s:%d/metrics", addr.Host, addr.Port))
 
 	// Set all endpoints to metrics_endpoints
 	endpoints := make([]string, 0, len(database.MetricsEndpoints))

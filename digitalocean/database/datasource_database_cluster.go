@@ -169,13 +169,6 @@ func DataSourceDigitalOceanDatabaseCluster() *schema.Resource {
 					Type: schema.TypeString,
 				},
 			},
-
-			// Deprecated: Use metrics_endpoints instead
-			"metrics_endpoint": {
-				Type:       schema.TypeString,
-				Computed:   true,
-				Deprecated: "This attribute is deprecated. Use metrics_endpoints instead.",
-			},
 		},
 	}
 }
@@ -249,7 +242,6 @@ func dataSourceDigitalOceanDatabaseClusterRead(ctx context.Context, d *schema.Re
 			d.Set("private_network_uuid", db.PrivateNetworkUUID)
 			d.Set("project_id", db.ProjectID)
 
-			// Set metrics endpoints
 			metricsErr := setMetricsEndpoints(&db, d)
 			if metricsErr != nil {
 				return diag.Errorf("Error setting metrics endpoints for database cluster: %s", metricsErr)
