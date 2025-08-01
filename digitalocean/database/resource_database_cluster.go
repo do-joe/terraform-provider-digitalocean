@@ -580,7 +580,6 @@ func resourceDigitalOceanDatabaseClusterRead(ctx context.Context, d *schema.Reso
 		return diag.Errorf("Error setting ui connection info for database cluster: %s", err)
 	}
 
-	// Set metrics endpoints
 	metricsErr := setMetricsEndpoints(database, d)
 	if metricsErr != nil {
 		return diag.Errorf("Error setting metrics endpoints for database cluster: %s", metricsErr)
@@ -718,7 +717,6 @@ func setMetricsEndpoints(database *godo.Database, d *schema.ResourceData) error 
 		return fmt.Errorf("no metrics endpoints available for database cluster")
 	}
 
-	// Set all endpoints to metrics_endpoints
 	endpoints := make([]string, 0, len(database.MetricsEndpoints))
 	for _, addr := range database.MetricsEndpoints {
 		endpoints = append(endpoints, fmt.Sprintf("https://%s:%d/metrics", addr.Host, addr.Port))

@@ -58,7 +58,6 @@ func TestAccDigitalOceanDatabaseCluster_Basic(t *testing.T) {
 						"digitalocean_database_cluster.foobar", "project_id"),
 					resource.TestCheckResourceAttrSet(
 						"digitalocean_database_cluster.foobar", "storage_size_mib"),
-					// Check for metrics_endpoints
 					testAccCheckDigitalOceanDatabaseClusterMetricsEndpoints("digitalocean_database_cluster.foobar"),
 					testAccCheckDigitalOceanDatabaseClusterURIPassword(
 						"digitalocean_database_cluster.foobar", "uri"),
@@ -683,7 +682,6 @@ func testAccCheckDigitalOceanDatabaseClusterAttributes(database *godo.Database, 
 	}
 }
 
-// testAccCheckDigitalOceanDatabaseClusterMetricsEndpoints verifies that metrics_endpoints are properly set
 func testAccCheckDigitalOceanDatabaseClusterMetricsEndpoints(resourceName string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[resourceName]
@@ -691,7 +689,6 @@ func testAccCheckDigitalOceanDatabaseClusterMetricsEndpoints(resourceName string
 			return fmt.Errorf("Not found: %s", resourceName)
 		}
 
-		// Check that metrics_endpoints is set and has at least one element
 		count, err := strconv.Atoi(rs.Primary.Attributes["metrics_endpoints.#"])
 		if err != nil {
 			return fmt.Errorf("Error parsing metrics_endpoints count: %s", err)
@@ -700,7 +697,6 @@ func testAccCheckDigitalOceanDatabaseClusterMetricsEndpoints(resourceName string
 			return fmt.Errorf("metrics_endpoints is empty")
 		}
 
-		// Check that the first endpoint is a valid URL
 		firstEndpoint := rs.Primary.Attributes["metrics_endpoints.0"]
 		if firstEndpoint == "" {
 			return fmt.Errorf("First endpoint in metrics_endpoints is empty")

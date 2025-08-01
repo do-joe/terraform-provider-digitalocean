@@ -48,7 +48,6 @@ func TestAccDataSourceDigitalOceanDatabaseCluster_Basic(t *testing.T) {
 						"data.digitalocean_database_cluster.foobar", "project_id"),
 					resource.TestCheckResourceAttrSet(
 						"data.digitalocean_database_cluster.foobar", "storage_size_mib"),
-					// Check for metrics_endpoints
 					testAccCheckDataSourceDigitalOceanDatabaseClusterMetricsEndpoints("data.digitalocean_database_cluster.foobar"),
 					testAccCheckDigitalOceanDatabaseClusterURIPassword(
 						"digitalocean_database_cluster.foobar", "uri"),
@@ -90,7 +89,6 @@ func testAccCheckDataSourceDigitalOceanDatabaseClusterExists(n string, databaseC
 	}
 }
 
-// testAccCheckDataSourceDigitalOceanDatabaseClusterMetricsEndpoints verifies that metrics_endpoints are properly set
 func testAccCheckDataSourceDigitalOceanDatabaseClusterMetricsEndpoints(resourceName string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[resourceName]

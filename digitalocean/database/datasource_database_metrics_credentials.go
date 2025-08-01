@@ -28,13 +28,11 @@ func DataSourceDigitalOceanDatabaseMetricsCredentials() *schema.Resource {
 func dataSourceDigitalOceanDatabaseMetricsCredentialsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*config.CombinedConfig).GodoClient()
 
-	// Get global metrics credentials for the account
 	creds, _, err := client.Databases.GetMetricsCredentials(ctx)
 	if err != nil {
 		return diag.Errorf("Error retrieving database metrics credentials: %s", err)
 	}
 
-	// Set a unique ID for this resource
 	d.SetId("metrics-credentials")
 	d.Set("username", creds.BasicAuthUsername)
 	d.Set("password", creds.BasicAuthPassword)
