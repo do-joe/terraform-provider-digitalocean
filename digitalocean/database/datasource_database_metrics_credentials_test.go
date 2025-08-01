@@ -9,7 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
-func TestAccDataSourceDigitalOceanDatabaseClusterMetricsCredentials(t *testing.T) {
+func TestAccDataSourceDigitalOceanDatabaseMetricsCredentials(t *testing.T) {
 	var database godo.Database
 	databaseName := acceptance.RandomTestName()
 	databaseConfig := fmt.Sprintf(testAccCheckDigitalOceanDatabaseClusterConfigBasic, databaseName)
@@ -26,10 +26,10 @@ func TestAccDataSourceDigitalOceanDatabaseClusterMetricsCredentials(t *testing.T
 				),
 			},
 			{
-				Config: databaseConfig + testAccCheckDigitalOceanDatasourceMetricsCredentialsConfig,
+				Config: databaseConfig + testAccCheckDigitalOceanDatasourceMetricsCredentialsConfigNew,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrSet("data.digitalocean_database_cluster_metrics_credentials.creds", "username"),
-					resource.TestCheckResourceAttrSet("data.digitalocean_database_cluster_metrics_credentials.creds", "password"),
+					resource.TestCheckResourceAttrSet("data.digitalocean_database_metrics_credentials.creds", "username"),
+					resource.TestCheckResourceAttrSet("data.digitalocean_database_metrics_credentials.creds", "password"),
 				),
 			},
 		},
@@ -37,8 +37,6 @@ func TestAccDataSourceDigitalOceanDatabaseClusterMetricsCredentials(t *testing.T
 }
 
 const (
-	testAccCheckDigitalOceanDatasourceMetricsCredentialsConfig = `
-data "digitalocean_database_cluster_metrics_credentials" "creds" {
-  cluster_id = digitalocean_database_cluster.foobar.id
-}`
+	testAccCheckDigitalOceanDatasourceMetricsCredentialsConfigNew = `
+data "digitalocean_database_metrics_credentials" "creds" {}`
 )
