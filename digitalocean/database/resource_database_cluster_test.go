@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"regexp"
+	"strconv"
 	"testing"
 	"time"
 
@@ -57,6 +58,8 @@ func TestAccDigitalOceanDatabaseCluster_Basic(t *testing.T) {
 						"digitalocean_database_cluster.foobar", "project_id"),
 					resource.TestCheckResourceAttrSet(
 						"digitalocean_database_cluster.foobar", "storage_size_mib"),
+					// Check for metrics_endpoint (deprecated) and metrics_endpoints
+					testAccCheckDigitalOceanDatabaseClusterMetricsEndpoints("digitalocean_database_cluster.foobar"),
 					testAccCheckDigitalOceanDatabaseClusterURIPassword(
 						"digitalocean_database_cluster.foobar", "uri"),
 					testAccCheckDigitalOceanDatabaseClusterURIPassword(
@@ -674,6 +677,39 @@ func testAccCheckDigitalOceanDatabaseClusterAttributes(database *godo.Database, 
 
 		if database.Name != name {
 			return fmt.Errorf("Bad name: %s", database.Name)
+		}
+
+		return nil
+	}
+}
+
+// testAccCheckDigitalOceanDatabaseClusterMetricsEndpoints verifies that metrics_endpoints are properly set
+func testAccCheckDigitalOceanDatabaseClusterMetricsEndpoints(resourceName string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rs, ok := s.RootModule().Resources[resourceName]
+		if !ok {
+			return fmt.Errorf("Not found: %s", resourceName)
+		}
+
+		// Check that metrics_endpoint is set and is a valid URL
+		metricsEndpoint := rs.Primary.Attributes["metrics_endpoint"]
+		if metricsEndpoint == "" {
+			return fmt.Errorf("metrics_endpoint is empty")
+		}
+
+		// Check that metrics_endpoints is set and has at least one element
+		count, err := strconv.Atoi(rs.Primary.Attributes["metrics_endpoints.#"])
+		if err != nil {
+			return fmt.Errorf("Error parsing metrics_endpoints count: %s", err)
+		}
+		if count == 0 {
+			return fmt.Errorf("metrics_endpoints is empty")
+		}
+
+		// Check that the first endpoint in metrics_endpoints matches metrics_endpoint
+		firstEndpoint := rs.Primary.Attributes["metrics_endpoints.0"]
+		if firstEndpoint != metricsEndpoint {
+			return fmt.Errorf("First endpoint in metrics_endpoints (%s) does not match metrics_endpoint (%s)", firstEndpoint, metricsEndpoint)
 		}
 
 		return nil

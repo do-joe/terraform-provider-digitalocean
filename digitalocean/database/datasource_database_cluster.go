@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 
 	"github.com/digitalocean/godo"
@@ -163,9 +162,19 @@ func DataSourceDigitalOceanDatabaseCluster() *schema.Resource {
 				Computed: true,
 			},
 
-			"metrics_endpoint": {
-				Type:     schema.TypeString,
+			"metrics_endpoints": {
+				Type:     schema.TypeList,
 				Computed: true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+			},
+
+			// Deprecated: Use metrics_endpoints instead
+			"metrics_endpoint": {
+				Type:       schema.TypeString,
+				Computed:   true,
+				Deprecated: "This attribute is deprecated. Use metrics_endpoints instead.",
 			},
 		},
 	}
@@ -240,10 +249,10 @@ func dataSourceDigitalOceanDatabaseClusterRead(ctx context.Context, d *schema.Re
 			d.Set("private_network_uuid", db.PrivateNetworkUUID)
 			d.Set("project_id", db.ProjectID)
 
-			// Set metrics endpoint if available
-			if len(db.MetricsEndpoints) > 0 {
-				addr := db.MetricsEndpoints[0]
-				d.Set("metrics_endpoint", fmt.Sprintf("https://%s:%d/metrics", addr.Host, addr.Port))
+			// Set metrics endpoints
+			metricsErr := setMetricsEndpoints(&db, d)
+			if metricsErr != nil {
+				return diag.Errorf("Error setting metrics endpoints for database cluster: %s", metricsErr)
 			}
 
 			break

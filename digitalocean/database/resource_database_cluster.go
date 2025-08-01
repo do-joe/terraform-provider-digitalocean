@@ -264,9 +264,19 @@ func ResourceDigitalOceanDatabaseCluster() *schema.Resource {
 				Computed: true,
 			},
 
-			"metrics_endpoint": {
-				Type:     schema.TypeString,
+			"metrics_endpoints": {
+				Type:     schema.TypeList,
 				Computed: true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+			},
+
+			// Deprecated: Use metrics_endpoints instead
+			"metrics_endpoint": {
+				Type:       schema.TypeString,
+				Computed:   true,
+				Deprecated: "This attribute is deprecated. Use metrics_endpoints instead.",
 			},
 		},
 
@@ -577,10 +587,10 @@ func resourceDigitalOceanDatabaseClusterRead(ctx context.Context, d *schema.Reso
 		return diag.Errorf("Error setting ui connection info for database cluster: %s", err)
 	}
 
-	// Set metrics endpoint if available
-	if len(database.MetricsEndpoints) > 0 {
-		addr := database.MetricsEndpoints[0]
-		d.Set("metrics_endpoint", fmt.Sprintf("https://%s:%d/metrics", addr.Host, addr.Port))
+	// Set metrics endpoints
+	metricsErr := setMetricsEndpoints(database, d)
+	if metricsErr != nil {
+		return diag.Errorf("Error setting metrics endpoints for database cluster: %s", metricsErr)
 	}
 
 	d.Set("urn", database.URN())
@@ -698,14 +708,35 @@ func setDatabaseConnectionInfo(database *godo.Database, d *schema.ResourceData) 
 }
 
 func setUIConnectionInfo(database *godo.Database, d *schema.ResourceData) error {
-	if database.UIConnection != nil {
-		d.Set("ui_host", database.UIConnection.Host)
-		d.Set("ui_port", database.UIConnection.Port)
-		d.Set("ui_uri", database.UIConnection.URI)
-		d.Set("ui_database", database.UIConnection.Database)
-		d.Set("ui_user", database.UIConnection.User)
-		d.Set("ui_password", database.UIConnection.Password)
+	if database.UIConnection == nil {
+		return fmt.Errorf("no UI connection available for database cluster")
 	}
+
+	d.Set("ui_host", database.UIConnection.Host)
+	d.Set("ui_port", database.UIConnection.Port)
+	d.Set("ui_uri", database.UIConnection.URI)
+	d.Set("ui_database", database.UIConnection.Database)
+	d.Set("ui_user", database.UIConnection.User)
+	d.Set("ui_password", database.UIConnection.Password)
+
+	return nil
+}
+
+func setMetricsEndpoints(database *godo.Database, d *schema.ResourceData) error {
+	if len(database.MetricsEndpoints) == 0 {
+		return fmt.Errorf("no metrics endpoints available for database cluster")
+	}
+
+	// For backward compatibility, set the first endpoint to metrics_endpoint
+	addr := database.MetricsEndpoints[0]
+	d.Set("metrics_endpoint", fmt.Sprintf("https://%s:%d/metrics", addr.Host, addr.Port))
+
+	// Set all endpoints to metrics_endpoints
+	endpoints := make([]string, 0, len(database.MetricsEndpoints))
+	for _, addr := range database.MetricsEndpoints {
+		endpoints = append(endpoints, fmt.Sprintf("https://%s:%d/metrics", addr.Host, addr.Port))
+	}
+	d.Set("metrics_endpoints", endpoints)
 
 	return nil
 }
