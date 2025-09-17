@@ -56,32 +56,13 @@ func expandLogsinkConfigRsyslog(d *schema.ResourceData) *godo.DatabaseLogsinkCon
 	if v, ok := d.GetOk("client_key"); ok {
 		config.Key = trimPEMString(v.(string))
 	}
-
-	return config
-}
-
-// expandLogsinkConfigElasticsearch converts Terraform schema data to godo.DatabaseLogsinkConfig for elasticsearch
-func expandLogsinkConfigElasticsearch(d *schema.ResourceData) *godo.DatabaseLogsinkConfig {
-	config := &godo.DatabaseLogsinkConfig{}
-
-	if v, ok := d.GetOk("endpoint"); ok {
-		config.URL = v.(string)
-	}
-	if v, ok := d.GetOk("index_prefix"); ok {
-		config.IndexPrefix = v.(string)
-	}
-	if v, ok := d.GetOk("index_days_max"); ok {
-		config.IndexDaysMax = v.(int)
-	}
-	if v, ok := d.GetOk("ca_cert"); ok {
-		config.CA = trimPEMString(v.(string))
-	}
 	if v, ok := d.GetOk("timeout_seconds"); ok {
 		config.Timeout = float32(v.(int))
 	}
 
 	return config
 }
+
 
 // expandLogsinkConfigOpensearch converts Terraform schema data to godo.DatabaseLogsinkConfig for opensearch
 func expandLogsinkConfigOpensearch(d *schema.ResourceData) *godo.DatabaseLogsinkConfig {
@@ -138,34 +119,13 @@ func flattenLogsinkConfigRsyslog(d *schema.ResourceData, config *godo.DatabaseLo
 	if config.Key != "" {
 		d.Set("client_key", trimPEMString(config.Key))
 	}
-
-	return nil
-}
-
-// flattenLogsinkConfigElasticsearch converts godo.DatabaseLogsinkConfig to Terraform schema data for elasticsearch
-func flattenLogsinkConfigElasticsearch(d *schema.ResourceData, config *godo.DatabaseLogsinkConfig) error {
-	if config == nil {
-		return nil
-	}
-
-	if config.URL != "" {
-		d.Set("endpoint", config.URL)
-	}
-	if config.IndexPrefix != "" {
-		d.Set("index_prefix", config.IndexPrefix)
-	}
-	if config.IndexDaysMax != 0 {
-		d.Set("index_days_max", config.IndexDaysMax)
-	}
-	if config.CA != "" {
-		d.Set("ca_cert", trimPEMString(config.CA))
-	}
 	if config.Timeout != 0 {
 		d.Set("timeout_seconds", int(config.Timeout))
 	}
 
 	return nil
 }
+
 
 // flattenLogsinkConfigOpensearch converts godo.DatabaseLogsinkConfig to Terraform schema data for opensearch
 func flattenLogsinkConfigOpensearch(d *schema.ResourceData, config *godo.DatabaseLogsinkConfig) error {
@@ -332,8 +292,6 @@ func getLogsinkSinkType(resourceName string) string {
 	switch {
 	case strings.Contains(resourceName, "_rsyslog"):
 		return "rsyslog"
-	case strings.Contains(resourceName, "_elasticsearch"):
-		return "elasticsearch"
 	case strings.Contains(resourceName, "_opensearch"):
 		return "opensearch"
 	default:
@@ -348,8 +306,6 @@ func buildCreateLogsinkRequest(d *schema.ResourceData, sinkType string) *godo.Da
 	switch sinkType {
 	case "rsyslog":
 		config = expandLogsinkConfigRsyslog(d)
-	case "elasticsearch":
-		config = expandLogsinkConfigElasticsearch(d)
 	case "opensearch":
 		config = expandLogsinkConfigOpensearch(d)
 	}
@@ -368,8 +324,6 @@ func buildUpdateLogsinkRequest(d *schema.ResourceData, sinkType string) *godo.Da
 	switch sinkType {
 	case "rsyslog":
 		config = expandLogsinkConfigRsyslog(d)
-	case "elasticsearch":
-		config = expandLogsinkConfigElasticsearch(d)
 	case "opensearch":
 		config = expandLogsinkConfigOpensearch(d)
 	}
@@ -387,8 +341,6 @@ func setLogsinkResourceData(d *schema.ResourceData, logsink *godo.DatabaseLogsin
 	switch sinkType {
 	case "rsyslog":
 		return flattenLogsinkConfigRsyslog(d, logsink.Config)
-	case "elasticsearch":
-		return flattenLogsinkConfigElasticsearch(d, logsink.Config)
 	case "opensearch":
 		return flattenLogsinkConfigOpensearch(d, logsink.Config)
 	}

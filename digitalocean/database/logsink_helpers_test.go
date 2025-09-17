@@ -203,54 +203,6 @@ func TestExpandLogsinkConfigRsyslog(t *testing.T) {
 	}
 }
 
-func TestExpandLogsinkConfigElasticsearch(t *testing.T) {
-	d := schema.TestResourceDataRaw(t, map[string]*schema.Schema{
-		"endpoint": {
-			Type:     schema.TypeString,
-			Optional: true,
-		},
-		"index_prefix": {
-			Type:     schema.TypeString,
-			Optional: true,
-		},
-		"index_days_max": {
-			Type:     schema.TypeInt,
-			Optional: true,
-		},
-		"ca_cert": {
-			Type:     schema.TypeString,
-			Optional: true,
-		},
-		"timeout_seconds": {
-			Type:     schema.TypeInt,
-			Optional: true,
-		},
-	}, map[string]interface{}{
-		"endpoint":        "https://es.example.com:9200",
-		"index_prefix":    "test-logs",
-		"index_days_max":  14,
-		"ca_cert":         "  test-ca-cert  ",
-		"timeout_seconds": 60,
-	})
-
-	config := expandLogsinkConfigElasticsearch(d)
-
-	if config.URL != "https://es.example.com:9200" {
-		t.Errorf("Expected URL to be 'https://es.example.com:9200', got %s", config.URL)
-	}
-	if config.IndexPrefix != "test-logs" {
-		t.Errorf("Expected IndexPrefix to be 'test-logs', got %s", config.IndexPrefix)
-	}
-	if config.IndexDaysMax != 14 {
-		t.Errorf("Expected IndexDaysMax to be 14, got %d", config.IndexDaysMax)
-	}
-	if config.CA != "test-ca-cert" {
-		t.Errorf("Expected CA to be 'test-ca-cert', got %s", config.CA)
-	}
-	if config.Timeout != 60.0 {
-		t.Errorf("Expected Timeout to be 60.0, got %f", config.Timeout)
-	}
-}
 
 func TestValidateLogsinkTimeout(t *testing.T) {
 	tests := []struct {
@@ -584,11 +536,6 @@ func TestGetLogsinkSinkType(t *testing.T) {
 			name:         "rsyslog resource",
 			resourceName: "digitalocean_database_logsink_rsyslog",
 			expected:     "rsyslog",
-		},
-		{
-			name:         "elasticsearch resource",
-			resourceName: "digitalocean_database_logsink_elasticsearch",
-			expected:     "elasticsearch",
 		},
 		{
 			name:         "opensearch resource",
