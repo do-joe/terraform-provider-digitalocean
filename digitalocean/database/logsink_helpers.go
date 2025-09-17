@@ -29,18 +29,11 @@ func splitLogsinkID(id string) (string, string) {
 func expandLogsinkConfigRsyslog(d *schema.ResourceData) *godo.DatabaseLogsinkConfig {
 	config := &godo.DatabaseLogsinkConfig{}
 
-	if v, ok := d.GetOk("server"); ok {
-		config.Server = v.(string)
-	}
-	if v, ok := d.GetOk("port"); ok {
-		config.Port = v.(int)
-	}
-	if v, ok := d.GetOk("tls"); ok {
-		config.TLS = v.(bool)
-	}
-	if v, ok := d.GetOk("format"); ok {
-		config.Format = v.(string)
-	}
+	// Always send required fields for rsyslog API
+	config.Server = d.Get("server").(string)
+	config.Port = d.Get("port").(int)
+	config.TLS = d.Get("tls").(bool)
+	config.Format = d.Get("format").(string)
 	if v, ok := d.GetOk("logline"); ok {
 		config.Logline = v.(string)
 	}
@@ -62,7 +55,6 @@ func expandLogsinkConfigRsyslog(d *schema.ResourceData) *godo.DatabaseLogsinkCon
 
 	return config
 }
-
 
 // expandLogsinkConfigOpensearch converts Terraform schema data to godo.DatabaseLogsinkConfig for opensearch
 func expandLogsinkConfigOpensearch(d *schema.ResourceData) *godo.DatabaseLogsinkConfig {
@@ -125,7 +117,6 @@ func flattenLogsinkConfigRsyslog(d *schema.ResourceData, config *godo.DatabaseLo
 
 	return nil
 }
-
 
 // flattenLogsinkConfigOpensearch converts godo.DatabaseLogsinkConfig to Terraform schema data for opensearch
 func flattenLogsinkConfigOpensearch(d *schema.ResourceData, config *godo.DatabaseLogsinkConfig) error {

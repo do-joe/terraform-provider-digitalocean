@@ -203,7 +203,6 @@ func TestExpandLogsinkConfigRsyslog(t *testing.T) {
 	}
 }
 
-
 func TestValidateLogsinkTimeout(t *testing.T) {
 	tests := []struct {
 		name      string
