@@ -20,7 +20,7 @@ func ResourceDigitalOceanDatabaseLogsinkRsyslog() *schema.Resource {
 		UpdateContext: resourceDigitalOceanDatabaseLogsinkRsyslogUpdate,
 		DeleteContext: resourceDigitalOceanDatabaseLogsinkRsyslogDelete,
 		Importer: &schema.ResourceImporter{
-			State: resourceDigitalOceanDatabaseLogsinkRsyslogImport,
+			StateContext: resourceDigitalOceanDatabaseLogsinkRsyslogImport,
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -89,12 +89,6 @@ func ResourceDigitalOceanDatabaseLogsinkRsyslog() *schema.Resource {
 				Optional:    true,
 				Sensitive:   true,
 				Description: "Client private key for mTLS (PEM format)",
-			},
-			"timeout_seconds": {
-				Type:         schema.TypeInt,
-				Optional:     true,
-				ValidateFunc: validateLogsinkTimeout,
-				Description:  "Request timeout for log deliveries in seconds (>= 1)",
 			},
 			"id": {
 				Type:        schema.TypeString,
@@ -210,16 +204,13 @@ func resourceDigitalOceanDatabaseLogsinkRsyslogDelete(ctx context.Context, d *sc
 	return nil
 }
 
-func resourceDigitalOceanDatabaseLogsinkRsyslogImport(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+func resourceDigitalOceanDatabaseLogsinkRsyslogImport(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+	// Validate the import ID format
 	clusterID, logsinkID := splitLogsinkID(d.Id())
-
 	if clusterID == "" || logsinkID == "" {
 		return nil, fmt.Errorf("must use the format 'cluster_id,logsink_id' for import (e.g. 'deadbeef-dead-4aa5-beef-deadbeef347d,01234567-89ab-cdef-0123-456789abcdef')")
 	}
 
-	d.SetId(createLogsinkID(clusterID, logsinkID))
-	d.Set("cluster_id", clusterID)
-	d.Set("logsink_id", logsinkID)
-
+	// The Read function will handle populating all fields from the API
 	return []*schema.ResourceData{d}, nil
 }

@@ -56,9 +56,6 @@ func expandLogsinkConfigRsyslog(d *schema.ResourceData) *godo.DatabaseLogsinkCon
 	if v, ok := d.GetOk("client_key"); ok {
 		config.Key = trimPEMString(v.(string))
 	}
-	if v, ok := d.GetOk("timeout_seconds"); ok {
-		config.Timeout = float32(v.(int))
-	}
 
 	return config
 }
@@ -140,9 +137,6 @@ func flattenLogsinkConfigRsyslog(d *schema.ResourceData, config *godo.DatabaseLo
 	// Preserve sensitive client_key from prior state if not returned by API
 	if config.Key != "" {
 		d.Set("client_key", trimPEMString(config.Key))
-	}
-	if config.Timeout != 0 {
-		d.Set("timeout_seconds", int(config.Timeout))
 	}
 
 	return nil
