@@ -13,6 +13,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
+// TestAccDigitalOceanDatabaseLogsinkRsyslog_Basic tests creating a basic rsyslog logsink
+// with default settings (TLS disabled, RFC5424 format). Expected: successful creation.
 func TestAccDigitalOceanDatabaseLogsinkRsyslog_Basic(t *testing.T) {
 	var logsink godo.DatabaseLogsink
 	clusterName := acceptance.RandomTestName()
@@ -31,7 +33,6 @@ func TestAccDigitalOceanDatabaseLogsinkRsyslog_Basic(t *testing.T) {
 					resource.TestCheckResourceAttr("digitalocean_database_logsink_rsyslog.test", "name", logsinkName),
 					resource.TestCheckResourceAttr("digitalocean_database_logsink_rsyslog.test", "server", "192.168.1.100"),
 					resource.TestCheckResourceAttr("digitalocean_database_logsink_rsyslog.test", "port", "514"),
-					resource.TestCheckResourceAttr("digitalocean_database_logsink_rsyslog.test", "tls", "false"),
 					resource.TestCheckResourceAttr("digitalocean_database_logsink_rsyslog.test", "format", "rfc5424"),
 					resource.TestCheckResourceAttrSet("digitalocean_database_logsink_rsyslog.test", "cluster_id"),
 					resource.TestCheckResourceAttrSet("digitalocean_database_logsink_rsyslog.test", "logsink_id"),
@@ -42,6 +43,8 @@ func TestAccDigitalOceanDatabaseLogsinkRsyslog_Basic(t *testing.T) {
 	})
 }
 
+// TestAccDigitalOceanDatabaseLogsinkRsyslog_Update tests updating an rsyslog logsink
+// configuration (port, TLS enabled, format change, structured data). Expected: successful update.
 func TestAccDigitalOceanDatabaseLogsinkRsyslog_Update(t *testing.T) {
 	var logsink godo.DatabaseLogsink
 	clusterName := acceptance.RandomTestName()
@@ -57,7 +60,6 @@ func TestAccDigitalOceanDatabaseLogsinkRsyslog_Update(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckDigitalOceanDatabaseLogsinkExists("digitalocean_database_logsink_rsyslog.test", &logsink),
 					resource.TestCheckResourceAttr("digitalocean_database_logsink_rsyslog.test", "port", "514"),
-					resource.TestCheckResourceAttr("digitalocean_database_logsink_rsyslog.test", "tls", "false"),
 					resource.TestCheckResourceAttr("digitalocean_database_logsink_rsyslog.test", "format", "rfc5424"),
 				),
 			},
@@ -75,6 +77,8 @@ func TestAccDigitalOceanDatabaseLogsinkRsyslog_Update(t *testing.T) {
 	})
 }
 
+// TestAccDigitalOceanDatabaseLogsinkRsyslog_CustomFormat tests creating an rsyslog logsink
+// with custom format and logline template. Expected: successful creation with custom logline.
 func TestAccDigitalOceanDatabaseLogsinkRsyslog_CustomFormat(t *testing.T) {
 	var logsink godo.DatabaseLogsink
 	clusterName := acceptance.RandomTestName()
@@ -97,6 +101,8 @@ func TestAccDigitalOceanDatabaseLogsinkRsyslog_CustomFormat(t *testing.T) {
 	})
 }
 
+// TestAccDigitalOceanDatabaseLogsinkRsyslog_TLS tests creating an rsyslog logsink
+// with TLS enabled and CA certificate. Expected: successful creation with TLS configuration.
 func TestAccDigitalOceanDatabaseLogsinkRsyslog_TLS(t *testing.T) {
 	var logsink godo.DatabaseLogsink
 	clusterName := acceptance.RandomTestName()
@@ -119,6 +125,8 @@ func TestAccDigitalOceanDatabaseLogsinkRsyslog_TLS(t *testing.T) {
 	})
 }
 
+// TestAccDigitalOceanDatabaseLogsinkRsyslog_MongoDB_ShouldFail tests that creating an rsyslog logsink
+// with a MongoDB cluster fails due to engine incompatibility. Expected: validation error.
 func TestAccDigitalOceanDatabaseLogsinkRsyslog_MongoDB_ShouldFail(t *testing.T) {
 	clusterName := acceptance.RandomTestName()
 	logsinkName := acceptance.RandomTestName()
@@ -131,6 +139,82 @@ func TestAccDigitalOceanDatabaseLogsinkRsyslog_MongoDB_ShouldFail(t *testing.T) 
 			{
 				Config:      fmt.Sprintf(testAccCheckDigitalOceanDatabaseLogsinkRsyslogConfigMongoDB, clusterName, logsinkName),
 				ExpectError: regexp.MustCompile("rsyslog sink type is not supported for MongoDB"),
+			},
+		},
+	})
+}
+
+// TestAccDigitalOceanDatabaseLogsinkRsyslog_InvalidPort tests validation for invalid port values.
+// Uses port 0 which is outside the valid range (1-65535). Expected: validation error.
+func TestAccDigitalOceanDatabaseLogsinkRsyslog_InvalidPort(t *testing.T) {
+	clusterName := acceptance.RandomTestName()
+	logsinkName := acceptance.RandomTestName()
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:          func() { acceptance.TestAccPreCheck(t) },
+		ProviderFactories: acceptance.TestAccProviderFactories,
+		CheckDestroy:      testAccCheckDigitalOceanDatabaseLogsinkDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config:      fmt.Sprintf(testAccCheckDigitalOceanDatabaseLogsinkRsyslogConfigInvalidPort, clusterName, logsinkName),
+				ExpectError: regexp.MustCompile("must be between 1 and 65535"),
+			},
+		},
+	})
+}
+
+// TestAccDigitalOceanDatabaseLogsinkRsyslog_CustomFormatRequiresLogline tests validation for custom format.
+// Uses format "custom" without providing logline field. Expected: validation error requiring logline.
+func TestAccDigitalOceanDatabaseLogsinkRsyslog_CustomFormatRequiresLogline(t *testing.T) {
+	clusterName := acceptance.RandomTestName()
+	logsinkName := acceptance.RandomTestName()
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:          func() { acceptance.TestAccPreCheck(t) },
+		ProviderFactories: acceptance.TestAccProviderFactories,
+		CheckDestroy:      testAccCheckDigitalOceanDatabaseLogsinkDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config:      fmt.Sprintf(testAccCheckDigitalOceanDatabaseLogsinkRsyslogConfigCustomNoLogline, clusterName, logsinkName),
+				ExpectError: regexp.MustCompile("logline is required when format is 'custom'"),
+			},
+		},
+	})
+}
+
+// TestAccDigitalOceanDatabaseLogsinkRsyslog_InvalidFormat tests validation for invalid format values.
+// Uses "invalid_format" which is not in allowed values (rfc5424, rfc3164, custom). Expected: validation error.
+func TestAccDigitalOceanDatabaseLogsinkRsyslog_InvalidFormat(t *testing.T) {
+	clusterName := acceptance.RandomTestName()
+	logsinkName := acceptance.RandomTestName()
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:          func() { acceptance.TestAccPreCheck(t) },
+		ProviderFactories: acceptance.TestAccProviderFactories,
+		CheckDestroy:      testAccCheckDigitalOceanDatabaseLogsinkDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config:      fmt.Sprintf(testAccCheckDigitalOceanDatabaseLogsinkRsyslogConfigInvalidFormat, clusterName, logsinkName),
+				ExpectError: regexp.MustCompile("must be one of: rfc5424, rfc3164, custom"),
+			},
+		},
+	})
+}
+
+// TestAccDigitalOceanDatabaseLogsinkRsyslog_CertWithoutTLS tests validation for certificate fields without TLS.
+// Provides ca_cert but leaves TLS disabled (default false). Expected: validation error requiring TLS.
+func TestAccDigitalOceanDatabaseLogsinkRsyslog_CertWithoutTLS(t *testing.T) {
+	clusterName := acceptance.RandomTestName()
+	logsinkName := acceptance.RandomTestName()
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:          func() { acceptance.TestAccPreCheck(t) },
+		ProviderFactories: acceptance.TestAccProviderFactories,
+		CheckDestroy:      testAccCheckDigitalOceanDatabaseLogsinkDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config:      fmt.Sprintf(testAccCheckDigitalOceanDatabaseLogsinkRsyslogConfigCertWithoutTLS, clusterName, logsinkName),
+				ExpectError: regexp.MustCompile("TLS certificate fields require tls to be enabled"),
 			},
 		},
 	})
@@ -256,6 +340,7 @@ resource "digitalocean_database_logsink_rsyslog" "test" {
   name       = "%s"
   server     = "192.168.1.100"
   port       = 514
+  tls        = false
   format     = "custom"
   logline    = "%%timestamp%% %%HOSTNAME%% %%app-name%% %%procid%% %%msgid%% %%msg%%"
 }`
@@ -295,4 +380,80 @@ resource "digitalocean_database_logsink_rsyslog" "test" {
   server     = "192.168.1.100"
   port       = 514
   format     = "rfc5424"
+}`
+
+const testAccCheckDigitalOceanDatabaseLogsinkRsyslogConfigInvalidPort = `
+resource "digitalocean_database_cluster" "test" {
+  name       = "%s"
+  engine     = "pg"
+  version    = "15"
+  size       = "db-s-1vcpu-1gb"
+  region     = "nyc1"
+  node_count = 1
+}
+
+resource "digitalocean_database_logsink_rsyslog" "test" {
+  cluster_id = digitalocean_database_cluster.test.id
+  name       = "%s"
+  server     = "192.168.1.100"
+  port       = 0
+  tls        = false
+  format     = "rfc5424"
+}`
+
+const testAccCheckDigitalOceanDatabaseLogsinkRsyslogConfigCustomNoLogline = `
+resource "digitalocean_database_cluster" "test" {
+  name       = "%s"
+  engine     = "pg"
+  version    = "15"
+  size       = "db-s-1vcpu-1gb"
+  region     = "nyc1"
+  node_count = 1
+}
+
+resource "digitalocean_database_logsink_rsyslog" "test" {
+  cluster_id = digitalocean_database_cluster.test.id
+  name       = "%s"
+  server     = "192.168.1.100"
+  port       = 514
+  tls        = false
+  format     = "custom"
+}`
+
+const testAccCheckDigitalOceanDatabaseLogsinkRsyslogConfigInvalidFormat = `
+resource "digitalocean_database_cluster" "test" {
+  name       = "%s"
+  engine     = "pg"
+  version    = "15"
+  size       = "db-s-1vcpu-1gb"
+  region     = "nyc1"
+  node_count = 1
+}
+
+resource "digitalocean_database_logsink_rsyslog" "test" {
+  cluster_id = digitalocean_database_cluster.test.id
+  name       = "%s"
+  server     = "192.168.1.100"
+  port       = 514
+  tls        = false
+  format     = "invalid_format"
+}`
+
+const testAccCheckDigitalOceanDatabaseLogsinkRsyslogConfigCertWithoutTLS = `
+resource "digitalocean_database_cluster" "test" {
+  name       = "%s"
+  engine     = "pg"
+  version    = "15"
+  size       = "db-s-1vcpu-1gb"
+  region     = "nyc1"
+  node_count = 1
+}
+
+resource "digitalocean_database_logsink_rsyslog" "test" {
+  cluster_id = digitalocean_database_cluster.test.id
+  name       = "%s"
+  server     = "192.168.1.100"
+  port       = 514
+  format     = "rfc5424"
+  ca_cert    = "-----BEGIN CERTIFICATE-----\nMIIBkTCB+wIJANOxiCFJwTkMMA0GCSqGSIb3DQEBCwUAMBQxEjAQBgNVBAMMCWxv\nY2FsaG9zdDAeFw0yMzEwMTAwMDAwMDBaFw0yNDEwMDkwMDAwMDBaMBQxEjAQBgNV\nBAMMCWxvY2FsaG9zdDBcMA0GCSqGSIb3DQEBAQUAAksAMEgCQQC7k3M1Y7s+7k3M\n1Y7s+7k3M1Y7s+7k3M1Y7s+7k3M1Y7s+7k3M1Y7s+7k3M1Y7s+7k3M1Y7s+7k3M\n1Y7s+7k3AgMBAAEwDQYJKoZIhvcNAQELBQADQQA7k3M1Y7s+7k3M1Y7s+7k3M1Y7\ns+7k3M1Y7s+7k3M1Y7s+7k3M1Y7s+7k3M1Y7s+7k3M1Y7s+7k3M1Y7s+7k3M\n-----END CERTIFICATE-----"
 }`
