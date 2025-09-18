@@ -44,7 +44,7 @@ func TestAccDigitalOceanDatabaseLogsinkRsyslog_ImportBasic(t *testing.T) {
 				ImportState:       true,
 				ImportStateVerify: false,
 				ImportStateId:     "invalid-id-format",
-				ExpectError:       regexp.MustCompile("must be formatted as cluster_id,logsink_id"),
+				ExpectError:       regexp.MustCompile("must use the format 'cluster_id,logsink_id' for import"),
 			},
 		},
 	})
@@ -84,7 +84,7 @@ func TestAccDigitalOceanDatabaseLogsinkOpensearch_ImportBasic(t *testing.T) {
 				ImportState:       true,
 				ImportStateVerify: false,
 				ImportStateId:     "invalid-id-format",
-				ExpectError:       regexp.MustCompile("must be formatted as cluster_id,logsink_id"),
+				ExpectError:       regexp.MustCompile("must use the format 'cluster_id,logsink_id' for import"),
 			},
 		},
 	})

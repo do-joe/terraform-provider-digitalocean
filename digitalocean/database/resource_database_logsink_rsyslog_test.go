@@ -94,7 +94,7 @@ func TestAccDigitalOceanDatabaseLogsinkRsyslog_CustomFormat(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckDigitalOceanDatabaseLogsinkExists("digitalocean_database_logsink_rsyslog.test", &logsink),
 					resource.TestCheckResourceAttr("digitalocean_database_logsink_rsyslog.test", "format", "custom"),
-					resource.TestCheckResourceAttr("digitalocean_database_logsink_rsyslog.test", "logline", "%%timestamp%% %%HOSTNAME%% %%app-name%% %%procid%% %%msgid%% %%msg%%"),
+					resource.TestCheckResourceAttr("digitalocean_database_logsink_rsyslog.test", "logline", "%timestamp% %HOSTNAME% %app-name% %procid% %msgid% %msg%"),
 				),
 			},
 		},
@@ -118,7 +118,7 @@ func TestAccDigitalOceanDatabaseLogsinkRsyslog_TLS(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckDigitalOceanDatabaseLogsinkExists("digitalocean_database_logsink_rsyslog.test", &logsink),
 					resource.TestCheckResourceAttr("digitalocean_database_logsink_rsyslog.test", "tls", "true"),
-					resource.TestCheckResourceAttr("digitalocean_database_logsink_rsyslog.test", "ca_cert", "-----BEGIN CERTIFICATE-----\nMIIBkTCB+wIJANOxiCFJwTkMMA0GCSqGSIb3DQEBCwUAMBQxEjAQBgNVBAMMCWxv\nY2FsaG9zdDAeFw0yMzEwMTAwMDAwMDBaFw0yNDEwMDkwMDAwMDBaMBQxEjAQBgNV\nBAMMCWxvY2FsaG9zdDBcMA0GCSqGSIb3DQEBAQUAAksAMEgCQQC7k3M1Y7s+7k3M\n1Y7s+7k3M1Y7s+7k3M1Y7s+7k3M1Y7s+7k3M1Y7s+7k3M1Y7s+7k3M1Y7s+7k3M\n1Y7s+7k3AgMBAAEwDQYJKoZIhvcNAQELBQADQQA7k3M1Y7s+7k3M1Y7s+7k3M1Y7\ns+7k3M1Y7s+7k3M1Y7s+7k3M1Y7s+7k3M1Y7s+7k3M1Y7s+7k3M1Y7s+7k3M\n-----END CERTIFICATE-----"),
+					resource.TestCheckResourceAttr("digitalocean_database_logsink_rsyslog.test", "ca_cert", "-----BEGIN CERTIFICATE-----\nMIIDCTCCAfGgAwIBAgIUdh0W7W79ns0Gc+6ZylC6JpCrF50wDQYJKoZIhvcNAQEL\nBQAwFDESMBAGA1UEAwwJbG9jYWxob3N0MB4XDTI1MDkxODE3NTMzNloXDTI2MDkx\nODE3NTMzNlowFDESMBAGA1UEAwwJbG9jYWxob3N0MIIBIjANBgkqhkiG9w0BAQEF\nAAOCAQ8AMIIBCgKCAQEAsBxZyNgjCWqsDE6h5sfMZo1JfD3WFzGZN2XdPwaPDPH9\nGI6UokJbhdJXPhFPyKmXis8vRC7Dos434lCp6RuYEHYk27wBam2pZSAi/P+Be5EU\nbdJdRjikPtu31JVsbZ2ookIc9zfBxPbXd5F4wNlcUFRATv2LC2SFQ91l5fmuiThU\nXx8+0Prls1Jzuz3Ll/oLM+1vxQEZFWvZCcq4HPFyf0p5Y37alxyVGSQxOqnQW3Wu\nhxNVdMKbfhx50B9Kh62LZ4+Pcv06/ftReeIV7+lO+8/FQs1BsjbLlpsIsuXgueR5\nahfOMQ/3/Wu5sb7jN3o6DINjpBmGW8zItWnIiTm8CQIDAQABo1MwUTAdBgNVHQ4E\nFgQUmY7HILyhR4RiRKFkyDyT/7fXLRMwHwYDVR0jBBgwFoAUmY7HILyhR4RiRKFk\nyDyT/7fXLRMwDwYDVR0TAQH/BAUwAwEB/zANBgkqhkiG9w0BAQsFAAOCAQEAP/wy\neDjrbAMgeuTUB0DisfkUZo2RKY/hJ9+9lH9VjTQ1foomWr7J8HUJHh7Co1n8Tnjd\n0dAl1agRY0o3VZrASj3gyYWFumbe6BBjhIynzZK3rsP9BzFvl8+xNUS9jkWiFhYU\n5x9f3YzMxXQsRf6sRSfS7/IIF8SCeOZTCJIVMB8l+8XbxsoYpTKz9sG+Opg7LD2K\nFbWGBKiSbxB6SKjax0Fk0MHO07ehjOqlxqns/a78w2AsBNKc2SDv73eXv24dRzJS\nlJu7YXccTSWs2/Y+wDxTMyp3DlJ9kzkgTveXhmKJdhKW8L8a+K1hzNGBrczJeHnm\nCwPzEPg7ca5lXYLDEA==\n-----END CERTIFICATE-----"),
 				),
 			},
 		},
@@ -138,7 +138,7 @@ func TestAccDigitalOceanDatabaseLogsinkRsyslog_MongoDB_ShouldFail(t *testing.T) 
 		Steps: []resource.TestStep{
 			{
 				Config:      fmt.Sprintf(testAccCheckDigitalOceanDatabaseLogsinkRsyslogConfigMongoDB, clusterName, logsinkName),
-				ExpectError: regexp.MustCompile("rsyslog sink type is not supported for MongoDB"),
+				ExpectError: regexp.MustCompile("log sink not supported"),
 			},
 		},
 	})
@@ -214,7 +214,7 @@ func TestAccDigitalOceanDatabaseLogsinkRsyslog_CertWithoutTLS(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config:      fmt.Sprintf(testAccCheckDigitalOceanDatabaseLogsinkRsyslogConfigCertWithoutTLS, clusterName, logsinkName),
-				ExpectError: regexp.MustCompile("TLS certificate fields require tls to be enabled"),
+				ExpectError: regexp.MustCompile("tls must be true when ca_cert, client_cert, or client_key is set"),
 			},
 		},
 	})
@@ -361,14 +361,14 @@ resource "digitalocean_database_logsink_rsyslog" "test" {
   server     = "192.168.1.100"
   port       = 514
   tls        = true
-  ca_cert    = "-----BEGIN CERTIFICATE-----\nMIIBkTCB+wIJANOxiCFJwTkMMA0GCSqGSIb3DQEBCwUAMBQxEjAQBgNVBAMMCWxv\nY2FsaG9zdDAeFw0yMzEwMTAwMDAwMDBaFw0yNDEwMDkwMDAwMDBaMBQxEjAQBgNV\nBAMMCWxvY2FsaG9zdDBcMA0GCSqGSIb3DQEBAQUAAksAMEgCQQC7k3M1Y7s+7k3M\n1Y7s+7k3M1Y7s+7k3M1Y7s+7k3M1Y7s+7k3M1Y7s+7k3M1Y7s+7k3M1Y7s+7k3M\n1Y7s+7k3AgMBAAEwDQYJKoZIhvcNAQELBQADQQA7k3M1Y7s+7k3M1Y7s+7k3M1Y7\ns+7k3M1Y7s+7k3M1Y7s+7k3M1Y7s+7k3M1Y7s+7k3M1Y7s+7k3M1Y7s+7k3M\n-----END CERTIFICATE-----"
+  ca_cert    = "-----BEGIN CERTIFICATE-----\nMIIDCTCCAfGgAwIBAgIUdh0W7W79ns0Gc+6ZylC6JpCrF50wDQYJKoZIhvcNAQEL\nBQAwFDESMBAGA1UEAwwJbG9jYWxob3N0MB4XDTI1MDkxODE3NTMzNloXDTI2MDkx\nODE3NTMzNlowFDESMBAGA1UEAwwJbG9jYWxob3N0MIIBIjANBgkqhkiG9w0BAQEF\nAAOCAQ8AMIIBCgKCAQEAsBxZyNgjCWqsDE6h5sfMZo1JfD3WFzGZN2XdPwaPDPH9\nGI6UokJbhdJXPhFPyKmXis8vRC7Dos434lCp6RuYEHYk27wBam2pZSAi/P+Be5EU\nbdJdRjikPtu31JVsbZ2ookIc9zfBxPbXd5F4wNlcUFRATv2LC2SFQ91l5fmuiThU\nXx8+0Prls1Jzuz3Ll/oLM+1vxQEZFWvZCcq4HPFyf0p5Y37alxyVGSQxOqnQW3Wu\nhxNVdMKbfhx50B9Kh62LZ4+Pcv06/ftReeIV7+lO+8/FQs1BsjbLlpsIsuXgueR5\nahfOMQ/3/Wu5sb7jN3o6DINjpBmGW8zItWnIiTm8CQIDAQABo1MwUTAdBgNVHQ4E\nFgQUmY7HILyhR4RiRKFkyDyT/7fXLRMwHwYDVR0jBBgwFoAUmY7HILyhR4RiRKFk\nyDyT/7fXLRMwDwYDVR0TAQH/BAUwAwEB/zANBgkqhkiG9w0BAQsFAAOCAQEAP/wy\neDjrbAMgeuTUB0DisfkUZo2RKY/hJ9+9lH9VjTQ1foomWr7J8HUJHh7Co1n8Tnjd\n0dAl1agRY0o3VZrASj3gyYWFumbe6BBjhIynzZK3rsP9BzFvl8+xNUS9jkWiFhYU\n5x9f3YzMxXQsRf6sRSfS7/IIF8SCeOZTCJIVMB8l+8XbxsoYpTKz9sG+Opg7LD2K\nFbWGBKiSbxB6SKjax0Fk0MHO07ehjOqlxqns/a78w2AsBNKc2SDv73eXv24dRzJS\nlJu7YXccTSWs2/Y+wDxTMyp3DlJ9kzkgTveXhmKJdhKW8L8a+K1hzNGBrczJeHnm\nCwPzEPg7ca5lXYLDEA==\n-----END CERTIFICATE-----"
 }`
 
 const testAccCheckDigitalOceanDatabaseLogsinkRsyslogConfigMongoDB = `
 resource "digitalocean_database_cluster" "test" {
   name       = "%s"
   engine     = "mongodb"
-  version    = "6"
+  version    = "7"
   size       = "db-s-1vcpu-1gb"
   region     = "nyc1"
   node_count = 1
@@ -455,5 +455,5 @@ resource "digitalocean_database_logsink_rsyslog" "test" {
   server     = "192.168.1.100"
   port       = 514
   format     = "rfc5424"
-  ca_cert    = "-----BEGIN CERTIFICATE-----\nMIIBkTCB+wIJANOxiCFJwTkMMA0GCSqGSIb3DQEBCwUAMBQxEjAQBgNVBAMMCWxv\nY2FsaG9zdDAeFw0yMzEwMTAwMDAwMDBaFw0yNDEwMDkwMDAwMDBaMBQxEjAQBgNV\nBAMMCWxvY2FsaG9zdDBcMA0GCSqGSIb3DQEBAQUAAksAMEgCQQC7k3M1Y7s+7k3M\n1Y7s+7k3M1Y7s+7k3M1Y7s+7k3M1Y7s+7k3M1Y7s+7k3M1Y7s+7k3M1Y7s+7k3M\n1Y7s+7k3AgMBAAEwDQYJKoZIhvcNAQELBQADQQA7k3M1Y7s+7k3M1Y7s+7k3M1Y7\ns+7k3M1Y7s+7k3M1Y7s+7k3M1Y7s+7k3M1Y7s+7k3M1Y7s+7k3M1Y7s+7k3M\n-----END CERTIFICATE-----"
+  ca_cert    = "-----BEGIN CERTIFICATE-----\nMIIDCTCCAfGgAwIBAgIUdh0W7W79ns0Gc+6ZylC6JpCrF50wDQYJKoZIhvcNAQEL\nBQAwFDESMBAGA1UEAwwJbG9jYWxob3N0MB4XDTI1MDkxODE3NTMzNloXDTI2MDkx\nODE3NTMzNlowFDESMBAGA1UEAwwJbG9jYWxob3N0MIIBIjANBgkqhkiG9w0BAQEF\nAAOCAQ8AMIIBCgKCAQEAsBxZyNgjCWqsDE6h5sfMZo1JfD3WFzGZN2XdPwaPDPH9\nGI6UokJbhdJXPhFPyKmXis8vRC7Dos434lCp6RuYEHYk27wBam2pZSAi/P+Be5EU\nbdJdRjikPtu31JVsbZ2ookIc9zfBxPbXd5F4wNlcUFRATv2LC2SFQ91l5fmuiThU\nXx8+0Prls1Jzuz3Ll/oLM+1vxQEZFWvZCcq4HPFyf0p5Y37alxyVGSQxOqnQW3Wu\nhxNVdMKbfhx50B9Kh62LZ4+Pcv06/ftReeIV7+lO+8/FQs1BsjbLlpsIsuXgueR5\nahfOMQ/3/Wu5sb7jN3o6DINjpBmGW8zItWnIiTm8CQIDAQABo1MwUTAdBgNVHQ4E\nFgQUmY7HILyhR4RiRKFkyDyT/7fXLRMwHwYDVR0jBBgwFoAUmY7HILyhR4RiRKFk\nyDyT/7fXLRMwDwYDVR0TAQH/BAUwAwEB/zANBgkqhkiG9w0BAQsFAAOCAQEAP/wy\neDjrbAMgeuTUB0DisfkUZo2RKY/hJ9+9lH9VjTQ1foomWr7J8HUJHh7Co1n8Tnjd\n0dAl1agRY0o3VZrASj3gyYWFumbe6BBjhIynzZK3rsP9BzFvl8+xNUS9jkWiFhYU\n5x9f3YzMxXQsRf6sRSfS7/IIF8SCeOZTCJIVMB8l+8XbxsoYpTKz9sG+Opg7LD2K\nFbWGBKiSbxB6SKjax0Fk0MHO07ehjOqlxqns/a78w2AsBNKc2SDv73eXv24dRzJS\nlJu7YXccTSWs2/Y+wDxTMyp3DlJ9kzkgTveXhmKJdhKW8L8a+K1hzNGBrczJeHnm\nCwPzEPg7ca5lXYLDEA==\n-----END CERTIFICATE-----"
 }`

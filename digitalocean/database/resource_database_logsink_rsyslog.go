@@ -126,6 +126,11 @@ func resourceDigitalOceanDatabaseLogsinkRsyslogCreate(ctx context.Context, d *sc
 		return diag.Errorf("Error creating database logsink rsyslog: %s", err)
 	}
 
+	log.Printf("[DEBUG] API Response logsink: %#v", logsink)
+	log.Printf("[DEBUG] Logsink ID: '%s'", logsink.ID)
+	log.Printf("[DEBUG] Logsink Name: '%s'", logsink.Name)
+	log.Printf("[DEBUG] Logsink Type: '%s'", logsink.Type)
+
 	d.SetId(createLogsinkID(clusterID, logsink.ID))
 	log.Printf("[INFO] Database logsink rsyslog ID: %s", logsink.ID)
 
