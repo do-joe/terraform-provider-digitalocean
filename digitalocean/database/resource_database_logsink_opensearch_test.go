@@ -103,10 +103,6 @@ func TestAccDigitalOceanDatabaseLogsinkOpensearch_WithCA(t *testing.T) {
 	})
 }
 
-// NOTE: MongoDB test intentionally omitted - MongoDB clusters only support Datadog logsinks,
-// not OpenSearch logsinks. According to the API specification, MongoDB requires the
-// datadog_logsink integration instead of opensearch/rsyslog logsinks.
-
 // TestAccDigitalOceanDatabaseLogsinkOpensearch_InvalidIndexDaysMax tests validation for invalid index_days_max.
 // Uses value 0 which is below minimum (must be >= 1). Expected: validation error.
 func TestAccDigitalOceanDatabaseLogsinkOpensearch_InvalidIndexDaysMax(t *testing.T) {
