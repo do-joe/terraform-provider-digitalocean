@@ -136,9 +136,8 @@ func flattenLogsinkConfigOpensearch(d *schema.ResourceData, config *godo.Databas
 	if config.CA != "" {
 		d.Set("ca_cert", trimPEMString(config.CA))
 	}
-	if config.Timeout != 0 {
-		d.Set("timeout_seconds", int(config.Timeout))
-	}
+	// Always set timeout_seconds, even if 0, to avoid perpetual diffs
+	d.Set("timeout_seconds", int(config.Timeout))
 
 	return nil
 }
@@ -326,6 +325,10 @@ func buildUpdateLogsinkRequest(d *schema.ResourceData, sinkType string) *godo.Da
 
 // setLogsinkResourceData sets the resource data from a godo.DatabaseLogsink response
 func setLogsinkResourceData(d *schema.ResourceData, logsink *godo.DatabaseLogsink, sinkType string) error {
+	if logsink == nil {
+		return fmt.Errorf("logsink is nil")
+	}
+
 	d.Set("name", logsink.Name)
 	d.Set("logsink_id", logsink.ID)
 

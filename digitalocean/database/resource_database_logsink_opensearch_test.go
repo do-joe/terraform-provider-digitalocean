@@ -31,6 +31,7 @@ func TestAccDigitalOceanDatabaseLogsinkOpensearch_Basic(t *testing.T) {
 					resource.TestCheckResourceAttr("digitalocean_database_logsink_opensearch.test", "endpoint", "https://opensearch.example.com:9200"),
 					resource.TestCheckResourceAttr("digitalocean_database_logsink_opensearch.test", "index_prefix", "db-logs"),
 					resource.TestCheckResourceAttr("digitalocean_database_logsink_opensearch.test", "index_days_max", "7"),
+					resource.TestCheckResourceAttr("digitalocean_database_logsink_opensearch.test", "timeout_seconds", "10"),
 					resource.TestCheckResourceAttrSet("digitalocean_database_logsink_opensearch.test", "cluster_id"),
 					resource.TestCheckResourceAttrSet("digitalocean_database_logsink_opensearch.test", "logsink_id"),
 					resource.TestCheckResourceAttrSet("digitalocean_database_logsink_opensearch.test", "id"),
@@ -89,7 +90,7 @@ func TestAccDigitalOceanDatabaseLogsinkOpensearch_WithCA(t *testing.T) {
 				Config: fmt.Sprintf(testAccCheckDigitalOceanDatabaseLogsinkOpensearchConfigWithCA, clusterName, logsinkName),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckDigitalOceanDatabaseLogsinkExists("digitalocean_database_logsink_opensearch.test", &logsink),
-					resource.TestCheckResourceAttr("digitalocean_database_logsink_opensearch.test", "ca_cert", "-----BEGIN CERTIFICATE-----\nMIIBkTCB+wIJANOxiCFJwTkMMA0GCSqGSIb3DQEBCwUAMBQxEjAQBgNVBAMMCWxv\nY2FsaG9zdDAeFw0yMzEwMTAwMDAwMDBaFw0yNDEwMDkwMDAwMDBaMBQxEjAQBgNV\nBAMMCWxvY2FsaG9zdDBcMA0GCSqGSIb3DQEBAQUAAksAMEgCQQC7k3M1Y7s+7k3M\n1Y7s+7k3M1Y7s+7k3M1Y7s+7k3M1Y7s+7k3M1Y7s+7k3M1Y7s+7k3M1Y7s+7k3M\n1Y7s+7k3AgMBAAEwDQYJKoZIhvcNAQELBQADQQA7k3M1Y7s+7k3M1Y7s+7k3M1Y7\ns+7k3M1Y7s+7k3M1Y7s+7k3M1Y7s+7k3M1Y7s+7k3M1Y7s+7k3M1Y7s+7k3M\n-----END CERTIFICATE-----"),
+					resource.TestCheckResourceAttr("digitalocean_database_logsink_opensearch.test", "ca_cert", "-----BEGIN CERTIFICATE-----\nMIIDCTCCAfGgAwIBAgIUdh0W7W79ns0Gc+6ZylC6JpCrF50wDQYJKoZIhvcNAQEL\nBQAwFDESMBAGA1UEAwwJbG9jYWxob3N0MB4XDTI1MDkxODE3NTMzNloXDTI2MDkx\nODE3NTMzNlowFDESMBAGA1UEAwwJbG9jYWxob3N0MIIBIjANBgkqhkiG9w0BAQEF\nAAOCAQ8AMIIBCgKCAQEAsBxZyNgjCWqsDE6h5sfMZo1JfD3WFzGZN2XdPwaPDPH9\nGI6UokJbhdJXPhFPyKmXis8vRC7Dos434lCp6RuYEHYk27wBam2pZSAi/P+Be5EU\nbdJdRjikPtu31JVsbZ2ookIc9zfBxPbXd5F4wNlcUFRATv2LC2SFQ91l5fmuiThU\nXx8+0Prls1Jzuz3Ll/oLM+1vxQEZFWvZCcq4HPFyf0p5Y37alxyVGSQxOqnQW3Wu\nhxNVdMKbfhx50B9Kh62LZ4+Pcv06/ftReeIV7+lO+8/FQs1BsjbLlpsIsuXgueR5\nahfOMQ/3/Wu5sb7jN3o6DINjpBmGW8zItWnIiTm8CQIDAQABo1MwUTAdBgNVHQ4E\nFgQUmY7HILyhR4RiRKFkyDyT/7fXLRMwHwYDVR0jBBgwFoAUmY7HILyhR4RiRKFk\nyDyT/7fXLRMwDwYDVR0TAQH/BAUwAwEB/zANBgkqhkiG9w0BAQsFAAOCAQEAP/wy\neDjrbAMgeuTUB0DisfkUZo2RKY/hJ9+9lH9VjTQ1foomWr7J8HUJHh7Co1n8Tnjd\n0dAl1agRY0o3VZrASj3gyYWFumbe6BBjhIynzZK3rsP9BzFvl8+xNUS9jkWiFhYU\n5x9f3YzMxXQsRf6sRSfS7/IIF8SCeOZTCJIVMB8l+8XbxsoYpTKz9sG+Opg7LD2K\nFbWGBKiSbxB6SKjax0Fk0MHO07ehjOqlxqns/a78w2AsBNKc2SDv73eXv24dRzJS\nlJu7YXccTSWs2/Y+wDxTMyp3DlJ9kzkgTveXhmKJdhKW8L8a+K1hzNGBrczJeHnm\nCwPzEPg7ca5lXYLDEA==\n-----END CERTIFICATE-----"),
 				),
 			},
 		},
@@ -154,7 +155,7 @@ func TestAccDigitalOceanDatabaseLogsinkOpensearch_EmptyIndexPrefix(t *testing.T)
 		Steps: []resource.TestStep{
 			{
 				Config:      fmt.Sprintf(testAccCheckDigitalOceanDatabaseLogsinkOpensearchConfigEmptyIndexPrefix, clusterName, logsinkName),
-				ExpectError: regexp.MustCompile("index_prefix cannot be empty"),
+				ExpectError: regexp.MustCompile(`"index_prefix" cannot be empty`),
 			},
 		},
 	})
@@ -195,6 +196,7 @@ resource "digitalocean_database_logsink_opensearch" "test" {
   endpoint        = "https://opensearch.example.com:9200"
   index_prefix    = "db-logs"
   index_days_max  = 7
+  timeout_seconds = 10
 }`
 
 const testAccCheckDigitalOceanDatabaseLogsinkOpensearchConfigUpdated = `
@@ -227,30 +229,32 @@ resource "digitalocean_database_cluster" "test" {
 }
 
 resource "digitalocean_database_logsink_opensearch" "test" {
-  cluster_id     = digitalocean_database_cluster.test.id
-  name           = "%s"
-  endpoint       = "https://opensearch.example.com:9200"
-  index_prefix   = "db-logs"
-  index_days_max = 7
-  ca_cert        = "-----BEGIN CERTIFICATE-----\nMIIBkTCB+wIJANOxiCFJwTkMMA0GCSqGSIb3DQEBCwUAMBQxEjAQBgNVBAMMCWxv\nY2FsaG9zdDAeFw0yMzEwMTAwMDAwMDBaFw0yNDEwMDkwMDAwMDBaMBQxEjAQBgNV\nBAMMCWxvY2FsaG9zdDBcMA0GCSqGSIb3DQEBAQUAAksAMEgCQQC7k3M1Y7s+7k3M\n1Y7s+7k3M1Y7s+7k3M1Y7s+7k3M1Y7s+7k3M1Y7s+7k3M1Y7s+7k3M1Y7s+7k3M\n1Y7s+7k3AgMBAAEwDQYJKoZIhvcNAQELBQADQQA7k3M1Y7s+7k3M1Y7s+7k3M1Y7\ns+7k3M1Y7s+7k3M1Y7s+7k3M1Y7s+7k3M1Y7s+7k3M1Y7s+7k3M1Y7s+7k3M\n-----END CERTIFICATE-----"
+  cluster_id      = digitalocean_database_cluster.test.id
+  name            = "%s"
+  endpoint        = "https://opensearch.example.com:9200"
+  index_prefix    = "db-logs"
+  index_days_max  = 7
+  timeout_seconds = 10
+  ca_cert         = "-----BEGIN CERTIFICATE-----\nMIIDCTCCAfGgAwIBAgIUdh0W7W79ns0Gc+6ZylC6JpCrF50wDQYJKoZIhvcNAQEL\nBQAwFDESMBAGA1UEAwwJbG9jYWxob3N0MB4XDTI1MDkxODE3NTMzNloXDTI2MDkx\nODE3NTMzNlowFDESMBAGA1UEAwwJbG9jYWxob3N0MIIBIjANBgkqhkiG9w0BAQEF\nAAOCAQ8AMIIBCgKCAQEAsBxZyNgjCWqsDE6h5sfMZo1JfD3WFzGZN2XdPwaPDPH9\nGI6UokJbhdJXPhFPyKmXis8vRC7Dos434lCp6RuYEHYk27wBam2pZSAi/P+Be5EU\nbdJdRjikPtu31JVsbZ2ookIc9zfBxPbXd5F4wNlcUFRATv2LC2SFQ91l5fmuiThU\nXx8+0Prls1Jzuz3Ll/oLM+1vxQEZFWvZCcq4HPFyf0p5Y37alxyVGSQxOqnQW3Wu\nhxNVdMKbfhx50B9Kh62LZ4+Pcv06/ftReeIV7+lO+8/FQs1BsjbLlpsIsuXgueR5\nahfOMQ/3/Wu5sb7jN3o6DINjpBmGW8zItWnIiTm8CQIDAQABo1MwUTAdBgNVHQ4E\nFgQUmY7HILyhR4RiRKFkyDyT/7fXLRMwHwYDVR0jBBgwFoAUmY7HILyhR4RiRKFk\nyDyT/7fXLRMwDwYDVR0TAQH/BAUwAwEB/zANBgkqhkiG9w0BAQsFAAOCAQEAP/wy\neDjrbAMgeuTUB0DisfkUZo2RKY/hJ9+9lH9VjTQ1foomWr7J8HUJHh7Co1n8Tnjd\n0dAl1agRY0o3VZrASj3gyYWFumbe6BBjhIynzZK3rsP9BzFvl8+xNUS9jkWiFhYU\n5x9f3YzMxXQsRf6sRSfS7/IIF8SCeOZTCJIVMB8l+8XbxsoYpTKz9sG+Opg7LD2K\nFbWGBKiSbxB6SKjax0Fk0MHO07ehjOqlxqns/a78w2AsBNKc2SDv73eXv24dRzJS\nlJu7YXccTSWs2/Y+wDxTMyp3DlJ9kzkgTveXhmKJdhKW8L8a+K1hzNGBrczJeHnm\nCwPzEPg7ca5lXYLDEA==\n-----END CERTIFICATE-----"
 }`
 
 const testAccCheckDigitalOceanDatabaseLogsinkOpensearchConfigMongoDB = `
 resource "digitalocean_database_cluster" "test" {
   name       = "%s"
   engine     = "mongodb"
-  version    = "6"
+  version    = "8"
   size       = "db-s-1vcpu-1gb"
-  region     = "nyc1"
+  region     = "nyc3"
   node_count = 1
 }
 
 resource "digitalocean_database_logsink_opensearch" "test" {
-  cluster_id     = digitalocean_database_cluster.test.id
-  name           = "%s"
-  endpoint       = "https://opensearch.example.com:9200"
-  index_prefix   = "mongo-logs"
-  index_days_max = 7
+  cluster_id      = digitalocean_database_cluster.test.id
+  name            = "%s"
+  endpoint        = "https://opensearch.example.com:9200"
+  index_prefix    = "mongo-logs"
+  index_days_max  = 7
+  timeout_seconds = 10
 }`
 
 const testAccCheckDigitalOceanDatabaseLogsinkOpensearchConfigInvalidIndexDays = `
