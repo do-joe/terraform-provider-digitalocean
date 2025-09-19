@@ -13,6 +13,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
+// Database Engine Support Matrix for Logsinks:
+// - PostgreSQL, MySQL, Kafka, Valkey: support rsyslog, opensearch logsinks
+// - MongoDB: supports ONLY datadog logsinks (not opensearch or rsyslog)
+//
+// These tests cover rsyslog logsink functionality for supported engines only.
+
 // TestAccDigitalOceanDatabaseLogsinkRsyslog_Basic tests creating a basic rsyslog logsink
 // with default settings (TLS disabled, RFC5424 format). Expected: successful creation.
 func TestAccDigitalOceanDatabaseLogsinkRsyslog_Basic(t *testing.T) {
