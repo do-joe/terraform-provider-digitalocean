@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/digitalocean/godo"
 	"github.com/digitalocean/terraform-provider-digitalocean/digitalocean/config"
@@ -118,10 +119,14 @@ func resourceDigitalOceanDatabaseLogsinkRsyslogCreate(ctx context.Context, d *sc
 	client := meta.(*config.CombinedConfig).GodoClient()
 	clusterID := d.Get("cluster_id").(string)
 
-	req := buildCreateLogsinkRequest(d, "rsyslog")
+	req := &godo.DatabaseCreateLogsinkRequest{
+		Name:   d.Get("name").(string),
+		Type:   "rsyslog",
+		Config: expandLogsinkConfigRsyslog(d),
+	}
 
 	log.Printf("[DEBUG] Database logsink rsyslog create configuration: %#v", req)
-	logsink, _, err := client.Databases.CreateLogsink(context.Background(), clusterID, req)
+	logsink, _, err := client.Databases.CreateLogsink(ctx, clusterID, req)
 	if err != nil {
 		return diag.Errorf("Error creating database logsink rsyslog: %s", err)
 	}
@@ -146,7 +151,7 @@ func resourceDigitalOceanDatabaseLogsinkRsyslogRead(ctx context.Context, d *sche
 		return diag.Errorf("Invalid logsink ID format: %s", d.Id())
 	}
 
-	logsink, resp, err := client.Databases.GetLogsink(context.Background(), clusterID, logsinkID)
+	logsink, resp, err := client.Databases.GetLogsink(ctx, clusterID, logsinkID)
 	if err != nil {
 		// If the logsink is somehow already destroyed, mark as successfully gone
 		if resp != nil && resp.StatusCode == 404 {
@@ -156,10 +161,15 @@ func resourceDigitalOceanDatabaseLogsinkRsyslogRead(ctx context.Context, d *sche
 		return diag.Errorf("Error retrieving database logsink rsyslog: %s", err)
 	}
 
-	d.Set("cluster_id", clusterID)
+	if logsink == nil {
+		return diag.Errorf("Error retrieving database logsink rsyslog: logsink is nil")
+	}
 
-	err = setLogsinkResourceData(d, logsink, "rsyslog")
-	if err != nil {
+	d.Set("cluster_id", clusterID)
+	d.Set("name", logsink.Name)
+	d.Set("logsink_id", logsink.ID)
+
+	if err := flattenLogsinkConfigRsyslog(d, logsink.Config); err != nil {
 		return diag.Errorf("Error setting logsink resource data: %s", err)
 	}
 
@@ -174,10 +184,12 @@ func resourceDigitalOceanDatabaseLogsinkRsyslogUpdate(ctx context.Context, d *sc
 		return diag.Errorf("Invalid logsink ID format: %s", d.Id())
 	}
 
-	req := buildUpdateLogsinkRequest(d, "rsyslog")
+	req := &godo.DatabaseUpdateLogsinkRequest{
+		Config: expandLogsinkConfigRsyslog(d),
+	}
 
 	log.Printf("[DEBUG] Database logsink rsyslog update configuration: %#v", req)
-	_, err := client.Databases.UpdateLogsink(context.Background(), clusterID, logsinkID, req)
+	_, err := client.Databases.UpdateLogsink(ctx, clusterID, logsinkID, req)
 	if err != nil {
 		return diag.Errorf("Error updating database logsink rsyslog: %s", err)
 	}
@@ -195,7 +207,7 @@ func resourceDigitalOceanDatabaseLogsinkRsyslogDelete(ctx context.Context, d *sc
 	}
 
 	log.Printf("[INFO] Deleting database logsink rsyslog: %s", d.Id())
-	_, err := client.Databases.DeleteLogsink(context.Background(), clusterID, logsinkID)
+	_, err := client.Databases.DeleteLogsink(ctx, clusterID, logsinkID)
 	if err != nil {
 		// Treat 404 as success (already removed)
 		if godoErr, ok := err.(*godo.ErrorResponse); ok && godoErr.Response.StatusCode == 404 {
@@ -218,4 +230,147 @@ func resourceDigitalOceanDatabaseLogsinkRsyslogImport(ctx context.Context, d *sc
 
 	// The Read function will handle populating all fields from the API
 	return []*schema.ResourceData{d}, nil
+}
+
+// createLogsinkID creates a composite ID for logsink resources
+// Format: <cluster_id>,<logsink_id>
+func createLogsinkID(clusterID string, logsinkID string) string {
+	return fmt.Sprintf("%s,%s", clusterID, logsinkID)
+}
+
+// splitLogsinkID splits a composite logsink ID into cluster ID and logsink ID
+func splitLogsinkID(id string) (string, string) {
+	parts := strings.SplitN(id, ",", 2)
+	if len(parts) != 2 {
+		return "", ""
+	}
+	return parts[0], parts[1]
+}
+
+// expandLogsinkConfigRsyslog converts Terraform schema data to godo.DatabaseLogsinkConfig for rsyslog
+func expandLogsinkConfigRsyslog(d *schema.ResourceData) *godo.DatabaseLogsinkConfig {
+	config := &godo.DatabaseLogsinkConfig{}
+
+	config.Server = d.Get("server").(string)
+	config.Port = d.Get("port").(int)
+	config.TLS = d.Get("tls").(bool)
+	config.Format = d.Get("format").(string)
+	if v, ok := d.GetOk("logline"); ok {
+		config.Logline = v.(string)
+	}
+	if v, ok := d.GetOk("structured_data"); ok {
+		config.SD = v.(string)
+	}
+	if v, ok := d.GetOk("ca_cert"); ok {
+		config.CA = strings.TrimSpace(v.(string))
+	}
+	if v, ok := d.GetOk("client_cert"); ok {
+		config.Cert = strings.TrimSpace(v.(string))
+	}
+	if v, ok := d.GetOk("client_key"); ok {
+		config.Key = strings.TrimSpace(v.(string))
+	}
+
+	return config
+}
+
+// flattenLogsinkConfigRsyslog converts godo.DatabaseLogsinkConfig to Terraform schema data for rsyslog
+func flattenLogsinkConfigRsyslog(d *schema.ResourceData, config *godo.DatabaseLogsinkConfig) error {
+	if config == nil {
+		return nil
+	}
+
+	if config.Server != "" {
+		d.Set("server", config.Server)
+	}
+	if config.Port != 0 {
+		d.Set("port", config.Port)
+	}
+	d.Set("tls", config.TLS)
+	if config.Format != "" {
+		d.Set("format", config.Format)
+	}
+	if config.Logline != "" {
+		d.Set("logline", config.Logline)
+	}
+	if config.SD != "" {
+		d.Set("structured_data", config.SD)
+	}
+	if config.CA != "" {
+		d.Set("ca_cert", strings.TrimSpace(config.CA))
+	}
+	if config.Cert != "" {
+		d.Set("client_cert", strings.TrimSpace(config.Cert))
+	}
+	if config.Key != "" {
+		d.Set("client_key", strings.TrimSpace(config.Key))
+	}
+
+	return nil
+}
+
+// validateLogsinkPort validates port is in range 1-65535
+func validateLogsinkPort(val interface{}, key string) (warns []string, errs []error) {
+	v, ok := val.(int)
+	if !ok {
+		errs = append(errs, fmt.Errorf("%q must be an integer", key))
+		return
+	}
+
+	if v < 1 || v > 65535 {
+		errs = append(errs, fmt.Errorf("%q must be between 1 and 65535", key))
+	}
+
+	return
+}
+
+// validateRsyslogFormat validates format is one of the allowed values
+func validateRsyslogFormat(val interface{}, key string) (warns []string, errs []error) {
+	v, ok := val.(string)
+	if !ok {
+		errs = append(errs, fmt.Errorf("%q must be a string", key))
+		return
+	}
+
+	validFormats := []string{"rfc5424", "rfc3164", "custom"}
+	for _, format := range validFormats {
+		if v == format {
+			return
+		}
+	}
+
+	errs = append(errs, fmt.Errorf("%q must be one of: %s", key, strings.Join(validFormats, ", ")))
+	return
+}
+
+// validateLogsinkCustomDiff validates cross-field dependencies for rsyslog logsink resources
+func validateLogsinkCustomDiff(diff *schema.ResourceDiff, sinkType string) error {
+	if sinkType != "rsyslog" {
+		return nil
+	}
+
+	// If format is custom, require logline
+	format := diff.Get("format").(string)
+	logline := diff.Get("logline").(string)
+
+	if format == "custom" && strings.TrimSpace(logline) == "" {
+		return fmt.Errorf("logline is required when format is 'custom'")
+	}
+
+	// If any TLS cert fields are set, require tls = true
+	tls := diff.Get("tls").(bool)
+	caCert := diff.Get("ca_cert").(string)
+	clientCert := diff.Get("client_cert").(string)
+	clientKey := diff.Get("client_key").(string)
+
+	if !tls && (caCert != "" || clientCert != "" || clientKey != "") {
+		return fmt.Errorf("tls must be true when ca_cert, client_cert, or client_key is set")
+	}
+
+	// If client_cert or client_key is set, require both
+	if (clientCert != "" || clientKey != "") && (clientCert == "" || clientKey == "") {
+		return fmt.Errorf("both client_cert and client_key must be set for mTLS")
+	}
+
+	return nil
 }

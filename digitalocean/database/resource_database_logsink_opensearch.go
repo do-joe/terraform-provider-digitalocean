@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/url"
+	"strings"
 
 	"github.com/digitalocean/godo"
 	"github.com/digitalocean/terraform-provider-digitalocean/digitalocean/config"
@@ -93,10 +95,14 @@ func resourceDigitalOceanDatabaseLogsinkOpensearchCreate(ctx context.Context, d 
 	client := meta.(*config.CombinedConfig).GodoClient()
 	clusterID := d.Get("cluster_id").(string)
 
-	req := buildCreateLogsinkRequest(d, "opensearch")
+	req := &godo.DatabaseCreateLogsinkRequest{
+		Name:   d.Get("name").(string),
+		Type:   "opensearch",
+		Config: expandLogsinkConfigOpensearch(d),
+	}
 
 	log.Printf("[DEBUG] Database logsink opensearch create configuration: %#v", req)
-	logsink, _, err := client.Databases.CreateLogsink(context.Background(), clusterID, req)
+	logsink, _, err := client.Databases.CreateLogsink(ctx, clusterID, req)
 	if err != nil {
 		return diag.Errorf("Error creating database logsink opensearch: %s", err)
 	}
@@ -116,7 +122,7 @@ func resourceDigitalOceanDatabaseLogsinkOpensearchRead(ctx context.Context, d *s
 		return diag.Errorf("Invalid logsink ID format: %s", d.Id())
 	}
 
-	logsink, resp, err := client.Databases.GetLogsink(context.Background(), clusterID, logsinkID)
+	logsink, resp, err := client.Databases.GetLogsink(ctx, clusterID, logsinkID)
 	if err != nil {
 		// If the logsink is somehow already destroyed, mark as successfully gone
 		if resp != nil && resp.StatusCode == 404 {
@@ -126,10 +132,15 @@ func resourceDigitalOceanDatabaseLogsinkOpensearchRead(ctx context.Context, d *s
 		return diag.Errorf("Error retrieving database logsink opensearch: %s", err)
 	}
 
-	d.Set("cluster_id", clusterID)
+	if logsink == nil {
+		return diag.Errorf("Error retrieving database logsink opensearch: logsink is nil")
+	}
 
-	err = setLogsinkResourceData(d, logsink, "opensearch")
-	if err != nil {
+	d.Set("cluster_id", clusterID)
+	d.Set("name", logsink.Name)
+	d.Set("logsink_id", logsink.ID)
+
+	if err := flattenLogsinkConfigOpensearch(d, logsink.Config); err != nil {
 		return diag.Errorf("Error setting logsink resource data: %s", err)
 	}
 
@@ -144,10 +155,12 @@ func resourceDigitalOceanDatabaseLogsinkOpensearchUpdate(ctx context.Context, d 
 		return diag.Errorf("Invalid logsink ID format: %s", d.Id())
 	}
 
-	req := buildUpdateLogsinkRequest(d, "opensearch")
+	req := &godo.DatabaseUpdateLogsinkRequest{
+		Config: expandLogsinkConfigOpensearch(d),
+	}
 
 	log.Printf("[DEBUG] Database logsink opensearch update configuration: %#v", req)
-	_, err := client.Databases.UpdateLogsink(context.Background(), clusterID, logsinkID, req)
+	_, err := client.Databases.UpdateLogsink(ctx, clusterID, logsinkID, req)
 	if err != nil {
 		return diag.Errorf("Error updating database logsink opensearch: %s", err)
 	}
@@ -165,7 +178,7 @@ func resourceDigitalOceanDatabaseLogsinkOpensearchDelete(ctx context.Context, d 
 	}
 
 	log.Printf("[INFO] Deleting database logsink opensearch: %s", d.Id())
-	_, err := client.Databases.DeleteLogsink(context.Background(), clusterID, logsinkID)
+	_, err := client.Databases.DeleteLogsink(ctx, clusterID, logsinkID)
 	if err != nil {
 		// Treat 404 as success (already removed)
 		if godoErr, ok := err.(*godo.ErrorResponse); ok && godoErr.Response.StatusCode == 404 {
@@ -188,4 +201,121 @@ func resourceDigitalOceanDatabaseLogsinkOpensearchImport(ctx context.Context, d 
 
 	// The Read function will handle populating all fields from the API
 	return []*schema.ResourceData{d}, nil
+}
+
+// expandLogsinkConfigOpensearch converts Terraform schema data to godo.DatabaseLogsinkConfig for opensearch
+func expandLogsinkConfigOpensearch(d *schema.ResourceData) *godo.DatabaseLogsinkConfig {
+	config := &godo.DatabaseLogsinkConfig{}
+
+	if v, ok := d.GetOk("endpoint"); ok {
+		config.URL = v.(string)
+	}
+	if v, ok := d.GetOk("index_prefix"); ok {
+		config.IndexPrefix = v.(string)
+	}
+	if v, ok := d.GetOk("index_days_max"); ok {
+		config.IndexDaysMax = v.(int)
+	}
+	if v, ok := d.GetOk("ca_cert"); ok {
+		config.CA = strings.TrimSpace(v.(string))
+	}
+	if v, ok := d.GetOk("timeout_seconds"); ok {
+		config.Timeout = float32(v.(int))
+	}
+
+	return config
+}
+
+// flattenLogsinkConfigOpensearch converts godo.DatabaseLogsinkConfig to Terraform schema data for opensearch
+func flattenLogsinkConfigOpensearch(d *schema.ResourceData, config *godo.DatabaseLogsinkConfig) error {
+	if config == nil {
+		return nil
+	}
+
+	if config.URL != "" {
+		d.Set("endpoint", config.URL)
+	}
+	if config.IndexPrefix != "" {
+		d.Set("index_prefix", config.IndexPrefix)
+	}
+	if config.IndexDaysMax != 0 {
+		d.Set("index_days_max", config.IndexDaysMax)
+	}
+	if config.CA != "" {
+		d.Set("ca_cert", strings.TrimSpace(config.CA))
+	}
+	d.Set("timeout_seconds", int(config.Timeout))
+
+	return nil
+}
+
+// validateHTTPSEndpoint validates that URL uses HTTPS scheme
+func validateHTTPSEndpoint(val interface{}, key string) (warns []string, errs []error) {
+	v, ok := val.(string)
+	if !ok {
+		errs = append(errs, fmt.Errorf("%q must be a string", key))
+		return
+	}
+
+	if strings.TrimSpace(v) == "" {
+		errs = append(errs, fmt.Errorf("%q cannot be empty", key))
+		return
+	}
+
+	u, err := url.Parse(v)
+	if err != nil {
+		errs = append(errs, fmt.Errorf("%q must be a valid URL: %s", key, err))
+		return
+	}
+
+	if u.Scheme != "https" {
+		errs = append(errs, fmt.Errorf("%q must use HTTPS scheme", key))
+	}
+
+	return
+}
+
+// validateIndexPrefix validates index_prefix is not empty
+func validateIndexPrefix(val interface{}, key string) (warns []string, errs []error) {
+	v, ok := val.(string)
+	if !ok {
+		errs = append(errs, fmt.Errorf("%q must be a string", key))
+		return
+	}
+
+	if strings.TrimSpace(v) == "" {
+		errs = append(errs, fmt.Errorf("%q cannot be empty", key))
+	}
+
+	return
+}
+
+// validateIndexDaysMax validates index_days_max is >= 1
+func validateIndexDaysMax(val interface{}, key string) (warns []string, errs []error) {
+	v, ok := val.(int)
+	if !ok {
+		errs = append(errs, fmt.Errorf("%q must be an integer", key))
+		return
+	}
+
+	if v < 1 {
+		errs = append(errs, fmt.Errorf("%q must be >= 1", key))
+	}
+
+	return
+}
+
+// validateLogsinkTimeout validates timeout is >= 1 second
+func validateLogsinkTimeout(val interface{}, key string) (warns []string, errs []error) {
+	v, ok := val.(int)
+	if !ok {
+		errs = append(errs, fmt.Errorf("%q must be an integer", key))
+		return
+	}
+
+	if v < 1 {
+		errs = append(errs, fmt.Errorf("%q must be >= 1", key))
+	}
+
+	return
 }
